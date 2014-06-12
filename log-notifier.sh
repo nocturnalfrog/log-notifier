@@ -60,10 +60,23 @@ do
           if ($s != ""){
             $message = escapeshellarg(trim($s));
             // Requires: growlnotify (http://growl.info/downloads)
-            shell_exec("growlnotify --sticky -n '${APP_NAME}' -t $filename -p 0 -m $message --image '${ICON_PATH}'");
+            shell_exec("growlnotify \
+                --sticky \
+                --name '${APP_NAME}' \
+                --title $filename \
+                --priority 0 \
+                --message $message \
+                --image '${ICON_PATH}'\
+            ");
 
             // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
-            shell_exec("terminal-notifier -sound Basso -message $message -title $filename -sender com.apple.Console -execute \"open -b com.apple.Console $realpath;\" ");
+            shell_exec("terminal-notifier \
+                -sound Basso \
+                -message $message \
+                -title $filename \
+                -sender com.apple.Console \
+                -execute \"open -b com.apple.Console $realpath;\" /
+            ");
           }
         };' &
     fi
