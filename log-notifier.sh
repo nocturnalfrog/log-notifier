@@ -17,9 +17,9 @@
 
 
 # Constants
-here="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-appname="LogTracker"
-iconpath="${here}/../img/bg-magento-dev.png";
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+APP_NAME="LogTracker"
+ICON_PATH="${HERE}/../img/bg-magento-dev.png";
 
 
 # Check for required arguments
@@ -42,7 +42,7 @@ do
         else
             echo "Error: '${path}' not found."
         fi
-        echo "Stopping ${appname}..."
+        echo "Stopping ${APP_NAME}..."
         exit 1
     else
         echo "Tracking changes to '${path}'"
@@ -60,7 +60,7 @@ do
           if ($s != ""){
             $message = escapeshellarg(trim($s));
             // Requires: growlnotify (http://growl.info/downloads)
-            shell_exec("growlnotify --sticky -n '${appname}' -t $filename -p 0 -m $message --image '${iconpath}'");
+            shell_exec("growlnotify --sticky -n '${APP_NAME}' -t $filename -p 0 -m $message --image '${ICON_PATH}'");
 
             // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
             shell_exec("terminal-notifier -sound Basso -message $message -title $filename -sender com.apple.Console -execute \"open -b com.apple.Console $realpath;\" ");
