@@ -16,21 +16,59 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# Constants
+##### Constants
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 APP_NAME="LogTracker"
 ICON_PATH="${HERE}/../img/bg-magento-dev.png";
 
+##### Functions
+
+function usage
+{
+    echo "Usage: logtracker [-g|--growl][-h|--help] file(s)"
+}
+
+function cleanUp
+{
+    echo "Stopping ${APP_NAME}..."
+
+    if [ ! -z '$(jobs -p)' ]; then
+        echo "Exiting all background proceses..."
+        kill $(jobs -p);
+    fi
+}
+
+
+##### Main
+use_growl=0
+
+count=0
+params=( "$@" )
+for var in "$@"
+do
+    case ${var} in
+        -g | --growl )          use_growl=1
+                                # Remove argument
+                                unset params[${count}]
+                                set -- "${params[@]}"
+                                ;;
+        -h | --help )           usage
+                                exit
+                                ;;
+    esac
+    count=$((count+1))
+done
 
 # Check for required arguments
 if [ $# -eq 0 ]
 then
     echo "Error: Please provide the path of the file(s) you want to monitor."
+    echo $(usage)
     exit 1
 fi
 
-# When this exits, exit all back ground process also.
-trap 'kill $(jobs -p);' EXIT
+# When this script exits, exit all background processes also.
+trap cleanUp EXIT
 
 # Iterate the given file names.
 for path in "$@"
@@ -42,11 +80,10 @@ do
         else
             echo "Error: '${path}' not found."
         fi
-        echo "Stopping ${APP_NAME}..."
         exit 1
     else
         echo "Tracking changes to '${path}'"
-#        echo $(pwd)"/${path}"
+
         tail -n 0 -f ${path} | php -r '
         stream_set_blocking(STDIN, 0);
         $filename = basename("'${path}'");
@@ -59,24 +96,28 @@ do
           }
           if ($s != ""){
             $message = escapeshellarg(trim($s));
-            // Requires: growlnotify (http://growl.info/downloads)
-            shell_exec("growlnotify \
-                --sticky \
-                --name '${APP_NAME}' \
-                --title $filename \
-                --priority 0 \
-                --message $message \
-                --image '${ICON_PATH}'\
-            ");
 
-            // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
-            shell_exec("terminal-notifier \
-                -sound Basso \
-                -message $message \
-                -title $filename \
-                -sender com.apple.Console \
-                -execute \"open -b com.apple.Console $realpath;\" /
-            ");
+            if('${use_growl}'){
+                // Requires: growlnotify (http://growl.info/downloads)
+                shell_exec("growlnotify \
+                    --sticky \
+                    --name '${APP_NAME}' \
+                    --title $filename \
+                    --priority 0 \
+                    --message $message \
+                    --image '${ICON_PATH}'\
+                ");
+            }else{
+                // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
+                shell_exec("terminal-notifier \
+                    -sound Basso \
+                    -message $message \
+                    -title $filename \
+                    -sender com.apple.Console \
+                    -execute \"open -b com.apple.Console $realpath;\" /
+                ");
+            }
+
           }
         };' &
     fi
