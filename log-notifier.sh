@@ -17,9 +17,7 @@
 
 
 ##### Constants
-HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 APP_NAME="LogTracker"
-ICON_PATH="${HERE}/../img/bg-magento-dev.png";
 
 ##### Functions
 
@@ -105,7 +103,8 @@ do
                     --title $filename \
                     --priority 0 \
                     --message $message \
-                    --image '${ICON_PATH}'\
+                    --url file://$realpath\
+                    --appIcon com.apple.Console\
                 ");
             }else{
                 // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
@@ -125,3 +124,4 @@ done
 
 # wait ... until CTRL+C
 wait
+
