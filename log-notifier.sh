@@ -86,7 +86,10 @@ do
         stream_set_blocking(STDIN, 0);
         $filename = basename("'${path}'");
         $realpath = realpath("'${path}'");
-        while (true) {
+
+        // Loop until we get `end-of-file` from the stream.
+        // This keeps the php processes from running after the tail command have been killed.
+        while (!feof(STDIN)) {
           sleep(1);
           $s = "";
           while (($line = fgets(STDIN)) !== false) {
