@@ -18,9 +18,9 @@
 
 ##### Constants
 APP_NAME="LogTracker"
+OSX_VERSION=$(sw_vers -productVersion)
 
 ##### Functions
-
 function usage
 {
     echo "Usage: logtracker [-g|--growl][-h|--help] file(s)"
@@ -36,6 +36,14 @@ function cleanUp
     fi
 }
 
+function checkOS
+{
+    # The bash extended test command can compare dotted version numbers.
+    if [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
+        echo "Error: You need at least OSX 10.8 or higher to run this script without the --growl option."
+        exit 1
+    fi
+}
 
 ##### Main
 use_growl=0
@@ -56,6 +64,9 @@ do
     esac
     count=$((count+1))
 done
+
+# Need to check for valid OS after the options have been set!
+checkOS
 
 # Check for required arguments
 if [ $# -eq 0 ]
@@ -127,4 +138,3 @@ done
 
 # wait ... until CTRL+C
 wait
-
