@@ -45,6 +45,30 @@ function checkOS
     fi
 }
 
+function checkSoftware
+{
+    if  ! which -s terminal-notifier && [ ${use_growl} -eq 0 ]; then
+        echo "Attempting to install 'terminal-notifier'..."
+        # Lets try to install terminal-notifier
+        sudo gem install terminal-notifier
+
+        # Check to see if installation succeeded
+        if  ! which -s terminal-notifier; then
+            echo "Error: Could not install 'terminal-notifier'!"
+            echo "For manual installation see: https://github.com/alloy/terminal-notifier"
+            exit 1
+        else
+            echo "Installation succesfull! \n --"
+            terminal-notifier -message "Successfully installed 'terminal-notifier'!"
+        fi
+    fi
+
+    if  ! which -s growlnotify && [ ${use_growl} -eq 1 ]; then
+        echo "You need to download and install 'growlnotify' first! (http://growl.info/downloads)"
+        exit 1
+    fi
+}
+
 ##### Main
 use_growl=0
 
@@ -67,6 +91,7 @@ done
 
 # Need to check for valid OS after the options have been set!
 checkOS
+checkSoftware
 
 # Check for required arguments
 if [ $# -eq 0 ]
