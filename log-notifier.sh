@@ -22,6 +22,7 @@ OSX_VERSION=$(sw_vers -productVersion)
 
 #####
 use_growl=0
+directories=()
 file_pattern=""
 
 ##### Functions
@@ -90,27 +91,29 @@ function checkSoftware
 
 function recievedFSEvent
 {
-    # TODO handle spaces in file path!!
-    filename=$1
-    shift
-    event_flags=$@
-    echo ${event_flags}
+    event=$@
 
     # Listen for file creation
-    if echo ${event_flags} | grep -q "Created" --exclude "IsDir" > /dev/null ; then
-        # TODO Require a file pattern to match
-        trackFile 999 "${filename}"
-        echo "Started Monitoring: ${filename}"
+    if echo ${event} | grep -i "Created" | grep -i "IsFile" > /dev/null ; then
+        # Make sure the file matches the desired pattern
+        for directory in "${directories[@]}"
+        do
+            IFS=$'\n'
+            for file in $(find ${directory} -iname ${file_pattern}) ; do
+                if [ "${event/$file}" != "${event}" ] ; then
+                    # Found a match -> start monitoring
+                    trackFile 999 "${file}"
+                fi
+            done
+        done
     fi
-    echo "recievedFSEvent: ${filename} (${event_flags})"
-    echo "----"
 }
 
 function trackFolder
 {
-    path=$1
-    echo "Tracking: ${path}${file_pattern}"
-    trackFile 0 ${path}${file_pattern}
+    directory=$1
+    echo "${directory}/${file_pattern}"
+    trackFile 0 ${directory}"/"${file_pattern}
 }
 
 function trackFile
@@ -118,15 +121,14 @@ function trackFile
     initial_number_of_lines=$1
     shift
 
-    for path in "$@"
+    for file in "$@"
     do
-        echo "Tracking file: '${path}'"
-        if [ ! -f "$path" ]
+        if [ ! -f "${file}" ]
         then
-            echo "Warning: Found no files to track in '${path}'"
+            echo "Warning: No files to track in '${file}'"
         else
-            echo "Tracking changes to '${path}'"
-            tail -n ${initial_number_of_lines} -f "${path}" | php -r '
+            echo "--> Tracking: '${file}'"
+            tail -n ${initial_number_of_lines} -f "${file}" | php -r '
                 array_shift($argv);
                 // Escapce spaces in file path
                 $path = implode("\ ", $argv);
@@ -170,7 +172,7 @@ function trackFile
 
                   }
                 };
-                ' ${path} &
+                ' ${file} &
         fi
     done
 }
@@ -191,6 +193,12 @@ do
                                 exit
                                 ;;
     esac
+done
+
+# Assume that the rest of the arguments are the directory/directories
+for directory in $@
+do
+    directories=("${directories[@]}" "${directory}")
 done
 
 # Need to check for valid OS after the options have been set!
@@ -215,27 +223,22 @@ fi
 trap cleanUp EXIT
 
 # Start tracking existing files
-for path in "$@"
+echo "Start tracking existing files..."
+for directory in "${directories[@]}"
 do
-    if [ ! -d "$path" ]
+    if [ ! -d "$directory" ]
     then
-        echo "Error: '${path}' is not a valid directory."
+        echo "Error: '${directory}' is not a valid directory."
         usage
         exit 1
     else
-        trackFolder "${path}"
+        trackFolder "${directory}"
     fi
 done
 
 # listen for newly created files
-fswatch -0 -xr $@ | while read -d '' event
+echo "Start watching for new files..."
+fswatch -0 -x $@ | while read -d '' event
 do
     recievedFSEvent ${event}
-done &
-
-
-# wait ... until CTRL+C
-echo "waiting for file changes..."
-# Make sure the app doesn't quit when there are no files to track on startup
-while true; do read x; done
-wait
+done
