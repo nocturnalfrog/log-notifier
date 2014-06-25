@@ -33,12 +33,9 @@ function usage
 
 function cleanUp
 {
-    echo "Stopping ${APP_NAME}..."
-    # TODO check if this is still working
-    if [ ! -z "$(jobs -p)" ]; then
-        echo "Exiting all background proceses..."
-        kill $(jobs -p);
-    fi
+    echo "\nStopping ${APP_NAME}..."
+    # Stops ALL background processes
+    kill 0
 }
 
 function checkOS
