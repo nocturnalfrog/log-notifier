@@ -17,20 +17,24 @@
 
 
 ##### Constants
-APP_NAME="LogTracker"
+APP_NAME=$0
 OSX_VERSION=$(sw_vers -productVersion)
+
+#####
+use_growl=0
+file_pattern=""
 
 ##### Functions
 function usage
 {
-    echo "Usage: logtracker [-g|--growl][-h|--help] file(s)"
+    echo "Usage: ${APP_NAME} [-g][-h] -f file_pattern folder(s)"
 }
 
 function cleanUp
 {
     echo "Stopping ${APP_NAME}..."
-
-    if [ ! -z '$(jobs -p)' ]; then
+    # TODO check if this is still working
+    if [ ! -z "$(jobs -p)" ]; then
         echo "Exiting all background proceses..."
         kill $(jobs -p);
     fi
@@ -47,6 +51,7 @@ function checkOS
 
 function checkSoftware
 {
+    # https://github.com/alloy/terminal-notifier
     if  ! which -s terminal-notifier && [ ${use_growl} -eq 0 ]; then
         echo "Attempting to install 'terminal-notifier'..."
         # Lets try to install terminal-notifier
@@ -67,26 +72,125 @@ function checkSoftware
         echo "You need to download and install 'growlnotify' first! (http://growl.info/downloads)"
         exit 1
     fi
+
+    # https://github.com/alandipert/fswatch
+    if  ! which -s fswatch; then
+        # TODO check if brew is installed first, if not:
+        # ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
+        echo "Attempting to install 'fswatch'..."
+        brew install fswatch
+        if  ! which -s fswatch; then
+            echo "Error: Could not install 'fswatch'!"
+            exit 1
+        else
+            echo "Installation succesfull! \n --"
+        fi
+    fi
+}
+
+function recievedFSEvent
+{
+    # TODO handle spaces in file path!!
+    filename=$1
+    shift
+    event_flags=$@
+    echo ${event_flags}
+
+    # Listen for file creation
+    if echo ${event_flags} | grep -q "Created" --exclude "IsDir" > /dev/null ; then
+        # TODO Require a file pattern to match
+        trackFile 999 "${filename}"
+        echo "Started Monitoring: ${filename}"
+    fi
+    echo "recievedFSEvent: ${filename} (${event_flags})"
+    echo "----"
+}
+
+function trackFolder
+{
+    path=$1
+    echo "Tracking: ${path}${file_pattern}"
+    trackFile 0 ${path}${file_pattern}
+}
+
+function trackFile
+{
+    initial_number_of_lines=$1
+    shift
+
+    for path in "$@"
+    do
+        echo "Tracking file: '${path}'"
+        if [ ! -f "$path" ]
+        then
+            echo "Warning: Found no files to track in '${path}'"
+        else
+            echo "Tracking changes to '${path}'"
+            tail -n ${initial_number_of_lines} -f "${path}" | php -r '
+                array_shift($argv);
+                // Escapce spaces in file path
+                $path = implode("\ ", $argv);
+
+                stream_set_blocking(STDIN, 0);
+                $filename = basename($path);
+                $realpath = realpath($path);
+
+                // Loop until we get `end-of-file` from the stream.
+                // This keeps the php processes from running after the tail command have been killed.
+                while (!feof(STDIN)) {
+                  sleep(1);
+                  $s = "";
+                  while (($line = fgets(STDIN)) !== false) {
+                    $s.=$line;
+                  }
+                  if ($s != ""){
+                    $message = escapeshellarg(trim($s));
+
+                    if('${use_growl}'){
+                        // Requires: growlnotify (http://growl.info/downloads)
+                        shell_exec("growlnotify \
+                            --sticky \
+                            --name '${APP_NAME}' \
+                            --title $filename \
+                            --priority 0 \
+                            --message $message \
+                            --url file://$realpath\
+                            --appIcon com.apple.Console\
+                        ");
+                    }else{
+                        // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
+                        shell_exec("terminal-notifier \
+                            -sound Basso \
+                            -message $message \
+                            -title $filename \
+                            -sender com.apple.Console \
+                            -execute \"open -b com.apple.Console $realpath;\" /
+                        ");
+                    }
+
+                  }
+                };
+                ' ${path} &
+        fi
+    done
 }
 
 ##### Main
-use_growl=0
-
-count=0
-params=( "$@" )
+# Process options
 for var in "$@"
 do
     case ${var} in
+        -f | --file-pattern )   shift
+                                file_pattern=$1
+                                shift
+                                ;;
         -g | --growl )          use_growl=1
-                                # Remove argument
-                                unset params[${count}]
-                                set -- "${params[@]}"
+                                shift
                                 ;;
         -h | --help )           usage
                                 exit
                                 ;;
     esac
-    count=$((count+1))
 done
 
 # Need to check for valid OS after the options have been set!
@@ -94,72 +198,44 @@ checkOS
 checkSoftware
 
 # Check for required arguments
+if [ -z "${file_pattern}" ]; then
+    echo "Error: Please provide a file pattern"
+    usage
+    exit 1
+fi
+
 if [ $# -eq 0 ]
 then
-    echo "Error: Please provide the path of the file(s) you want to monitor."
-    echo $(usage)
+    echo "Error: Please provide the path of folder you want to monitor."
+    usage
     exit 1
 fi
 
 # When this script exits, exit all background processes also.
 trap cleanUp EXIT
 
-# Iterate the given file names.
+# Start tracking existing files
 for path in "$@"
 do
-    if [ ! -f "$path" ]
+    if [ ! -d "$path" ]
     then
-        if [ "$path" = "" ]; then
-            echo "Error: Please provide the path of the file you want to monitor."
-        else
-            echo "Error: '${path}' not found."
-        fi
+        echo "Error: '${path}' is not a valid directory."
+        usage
         exit 1
     else
-        echo "Tracking changes to '${path}'"
-
-        tail -n 0 -f ${path} | php -r '
-        stream_set_blocking(STDIN, 0);
-        $filename = basename("'${path}'");
-        $realpath = realpath("'${path}'");
-
-        // Loop until we get `end-of-file` from the stream.
-        // This keeps the php processes from running after the tail command have been killed.
-        while (!feof(STDIN)) {
-          sleep(1);
-          $s = "";
-          while (($line = fgets(STDIN)) !== false) {
-            $s.=$line;
-          }
-          if ($s != ""){
-            $message = escapeshellarg(trim($s));
-
-            if('${use_growl}'){
-                // Requires: growlnotify (http://growl.info/downloads)
-                shell_exec("growlnotify \
-                    --sticky \
-                    --name '${APP_NAME}' \
-                    --title $filename \
-                    --priority 0 \
-                    --message $message \
-                    --url file://$realpath\
-                    --appIcon com.apple.Console\
-                ");
-            }else{
-                // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
-                shell_exec("terminal-notifier \
-                    -sound Basso \
-                    -message $message \
-                    -title $filename \
-                    -sender com.apple.Console \
-                    -execute \"open -b com.apple.Console $realpath;\" /
-                ");
-            }
-
-          }
-        };' &
+        trackFolder "${path}"
     fi
 done
 
+# listen for newly created files
+fswatch -0 -xr $@ | while read -d '' event
+do
+    recievedFSEvent ${event}
+done &
+
+
 # wait ... until CTRL+C
+echo "waiting for file changes..."
+# Make sure the app doesn't quit when there are no files to track on startup
+while true; do read x; done
 wait
