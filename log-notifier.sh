@@ -126,12 +126,10 @@ function trackFile
         else
             echo "--> Tracking: '${file}'"
             tail -n ${initial_number_of_lines} -f "${file}" | php -r '
-                array_shift($argv);
-                // Escapce spaces in file path
-                $path = implode("\ ", $argv);
+                $path = trim($argv[1]);
 
                 stream_set_blocking(STDIN, 0);
-                $filename = basename($path);
+                $filename = escapeshellarg(basename($path));
                 $realpath = realpath($path);
 
                 // Loop until we get `end-of-file` from the stream.
@@ -146,6 +144,9 @@ function trackFile
                     $message = escapeshellarg(trim($s));
 
                     if('${use_growl}'){
+                        // Need to escape urlencode spaces in filename for terminal-notifier
+                        $realpath = str_replace(" ", "%20", $realpath);
+
                         // Requires: growlnotify (http://growl.info/downloads)
                         shell_exec("growlnotify \
                             --sticky \
@@ -153,10 +154,13 @@ function trackFile
                             --title $filename \
                             --priority 0 \
                             --message $message \
-                            --url file://$realpath\
-                            --appIcon com.apple.Console\
+                            --url \"file://$realpath\" \
+                            --appIcon com.apple.Console \
                         ");
                     }else{
+                        // Need to escape spaces in filename for terminal-notifier
+                        $realpath = str_replace(" ", "\ ", $realpath);
+
                         // Requires: terminal-notifier (https://github.com/alloy/terminal-notifier)
                         shell_exec("terminal-notifier \
                             -sound Basso \
@@ -169,7 +173,7 @@ function trackFile
 
                   }
                 };
-                ' ${file} &
+                ' "${file}" &
         fi
     done
 }
@@ -185,6 +189,7 @@ do
                                 ;;
         -g | --growl )          use_growl=1
                                 shift
+                                echo "Using Growl for notifications..."
                                 ;;
         -h | --help )           usage
                                 exit
