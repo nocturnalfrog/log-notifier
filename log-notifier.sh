@@ -23,12 +23,12 @@ OSX_VERSION=$(sw_vers -productVersion)
 #####
 use_growl=0
 directories=()
-file_pattern=""
+file_pattern="*.log"
 
 ##### Functions
 function usage
 {
-    echo "Usage: ${APP_NAME} [-g][-h] -f file_pattern folder(s)"
+    echo "Usage: ${APP_NAME} [-g][-h] [-p file_pattern] folder(s)"
 }
 
 function cleanUp
@@ -183,7 +183,7 @@ function trackFile
 for var in "$@"
 do
     case ${var} in
-        -f | --file-pattern )   shift
+        -p | --file-pattern )   shift
                                 file_pattern=$1
                                 shift
                                 ;;
@@ -208,12 +208,6 @@ checkOS
 checkSoftware
 
 # Check for required arguments
-if [ -z "${file_pattern}" ]; then
-    echo "Error: Please provide a file pattern"
-    usage
-    exit 1
-fi
-
 if [ $# -eq 0 ]
 then
     echo "Error: Please provide the path of folder you want to monitor."
