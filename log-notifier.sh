@@ -67,7 +67,17 @@ function checkSoftware
     fi
 
     if  ! which -s growlnotify && [ ${use_growl} -eq 1 ]; then
-        echo "You need to download and install 'growlnotify' first! (http://growl.info/downloads)"
+        echo "You need to download and install 'growlnotify' first!"
+        echo "-> http://growl.info/downloads \n"
+        echo "Open download page now?"
+        select result in Yes No
+        do
+            case ${result} in
+                Yes )   $(open http://growl.info/downloads);
+                        break;;
+                No )    break;;
+            esac
+        done
         exit 1
     fi
 
