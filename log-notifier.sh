@@ -19,6 +19,7 @@
 ##### Constants
 APP_NAME=$0
 OSX_VERSION=$(sw_vers -productVersion)
+SEPERATOR="---------------------------------"
 
 #####
 use_growl=0
@@ -33,7 +34,7 @@ function usage
 
 function cleanUp
 {
-    echo "\nStopping ${APP_NAME}..."
+    printf "\nStopping %s...\n" "${APP_NAME}"
     # Stops ALL background processes
     kill 0
 }
@@ -41,6 +42,7 @@ function cleanUp
 function checkOS
 {
     # The bash extended test command can compare dotted version numbers.
+    # shellcheck disable=SC2072
     if [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
         echo "Error: You need at least OSX 10.8 or higher to run this script without the --growl option."
         exit 1
@@ -61,19 +63,19 @@ function checkSoftware
             echo "For manual installation see: https://github.com/alloy/terminal-notifier"
             exit 1
         else
-            echo "Installation succesfull! \n --"
+            printf "Installation succesfull! \n--\n"
             terminal-notifier -message "Successfully installed 'terminal-notifier'!"
         fi
     fi
 
     if  ! which -s growlnotify && [ ${use_growl} -eq 1 ]; then
         echo "You need to download and install 'growlnotify' first!"
-        echo "-> http://growl.info/downloads \n"
-        echo "Open download page now?"
+        printf "URL: http://growl.info/downloads \n"
+        printf "Open download page now? \n"
         select result in Yes No
         do
             case ${result} in
-                Yes )   $(open http://growl.info/downloads);
+                Yes )   open "http://growl.info/downloads";
                         break;;
                 No )    break;;
             esac
@@ -91,22 +93,24 @@ function checkSoftware
             echo "Error: Could not install 'fswatch'!"
             exit 1
         else
-            echo "Installation succesfull! \n --"
+            printf "Installation succesfull! \n--\n"
         fi
     fi
 }
 
 function recievedFSEvent
 {
-    event=$@
+    event="$@"
 
     # Listen for file creation
-    if echo ${event} | grep -i "Created" | grep -i "IsFile" > /dev/null ; then
+    if echo "${event}" | grep -i "Created" | grep -i "IsFile" > /dev/null ; then
         # Make sure the file matches the desired pattern
         for directory in "${directories[@]}"
         do
-            IFS=$'\n'
-            for file in $(find ${directory} -iname ${file_pattern}) ; do
+            # We need globbing: do not double quote ${file_pattern}
+            # shellcheck disable=SC2086
+            find ${directory} -iname ${file_pattern} | while IFS=$'\n' read -r file
+            do
                 if [ "${event/$file}" != "${event}" ] ; then
                     # Found a match -> start monitoring
                     trackFile 999 "${file}"
@@ -120,7 +124,9 @@ function trackFolder
 {
     directory=$1
     echo "${directory}/${file_pattern}"
-    trackFile 0 ${directory}"/"${file_pattern}
+    # We need globbing: do not double quote ${file_pattern}
+    # shellcheck disable=SC2086
+    trackFile 0 "${directory}/"${file_pattern}
 }
 
 function trackFile
@@ -135,8 +141,11 @@ function trackFile
             echo "Warning: No files to track in '${file}'"
         else
             echo "--> Tracking: '${file}'"
-            tail -n ${initial_number_of_lines} -f "${file}" | php -r '
+            # shellcheck disable=SC1004,SC2016
+            tail -n "${initial_number_of_lines}" -f "${file}" | php -r '
                 $path = trim($argv[1]);
+                $app_name = trim($argv[2]);
+                $use_growl = $argv[3];
 
                 stream_set_blocking(STDIN, 0);
                 $filename = escapeshellarg(basename($path));
@@ -153,14 +162,14 @@ function trackFile
                   if ($s != ""){
                     $message = escapeshellarg(trim($s));
 
-                    if('${use_growl}'){
+                    if($use_growl){
                         // Need to escape urlencode spaces in filename for terminal-notifier
                         $realpath = str_replace(" ", "%20", $realpath);
 
                         // Requires: growlnotify (http://growl.info/downloads)
                         shell_exec("growlnotify \
                             --sticky \
-                            --name '${APP_NAME}' \
+                            --name $app_name \
                             --title $filename \
                             --priority 0 \
                             --message $message \
@@ -183,7 +192,7 @@ function trackFile
 
                   }
                 };
-                ' "${file}" &
+                ' "${file}" "${APP_NAME}" "${use_growl}" &
         fi
     done
 }
@@ -208,7 +217,7 @@ do
 done
 
 # Assume that the rest of the arguments are the directory/directories
-for directory in $@
+for directory in "$@"
 do
     # `%/` strips trailing slash from directory if present.
     directories=("${directories[@]}" "${directory%/}")
@@ -230,7 +239,7 @@ fi
 trap cleanUp EXIT
 
 # Start tracking existing files
-echo "Start tracking existing files..."
+printf "%s\n%s\n%s\n" "${SEPERATOR}" "Start tracking existing files..." "${SEPERATOR}"
 for directory in "${directories[@]}"
 do
     if [ ! -d "$directory" ]
@@ -244,8 +253,8 @@ do
 done
 
 # listen for newly created files
-echo "Start watching for new files..."
-fswatch -0 -x $@ | while read -d '' event
+printf "%s\n%s\n%s\n" "${SEPERATOR}" "Start watching for new files..." "${SEPERATOR}"
+fswatch -0 -x "$@" | while read -d '' event
 do
-    recievedFSEvent ${event}
+    recievedFSEvent "${event}"
 done
