@@ -210,7 +210,8 @@ done
 # Assume that the rest of the arguments are the directory/directories
 for directory in $@
 do
-    directories=("${directories[@]}" "${directory}")
+    # `%/` strips trailing slash from directory if present.
+    directories=("${directories[@]}" "${directory%/}")
 done
 
 # Need to check for valid OS after the options have been set!
