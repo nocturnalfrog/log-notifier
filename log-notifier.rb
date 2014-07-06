@@ -13,4 +13,8 @@ class LogNotifier < Formula
   # Adding dependencies
   depends_on "terminal-notifier"
   depends_on "fswatch"
+
+  test do
+    system bin/"log-notifier", "--test"
+  end
 end

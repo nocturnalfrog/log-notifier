@@ -41,12 +41,14 @@ function cleanUp
 
 function checkOS
 {
-    # The bash extended test command can compare dotted version numbers.
     # shellcheck disable=SC2072
+    # (The bash extended test command can compare dotted version numbers.)
     if [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
         echo "Error: You need at least OSX 10.8 or higher to run this script without the --growl option."
         exit 1
     fi
+
+    echo "Passed OS version check."
 }
 
 function checkSoftware
@@ -78,6 +80,7 @@ function checkSoftware
         exit 1
     fi
 
+    echo "Passed dependency check."
 }
 
 function recievedFSEvent
@@ -195,6 +198,11 @@ do
         -h | --help )           usage
                                 exit
                                 ;;
+        -t | --test )           checkOS
+                                checkSoftware
+                                terminal-notifier -message "All test passed succesfully!"
+                                exit
+                                ;;
     esac
 done
 
@@ -207,6 +215,7 @@ done
 
 # Need to check for valid OS after the options have been set!
 checkOS
+# Check if the required tools are installed
 checkSoftware
 
 # Check for required arguments
