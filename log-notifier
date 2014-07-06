@@ -43,7 +43,12 @@ function checkOS
 {
     # shellcheck disable=SC2072
     # (The bash extended test command can compare dotted version numbers.)
-    if [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
+    if [[ ${OSX_VERSION} < 10.7 ]]; then
+        # GrowlNotify requires at least 10.7 to run.
+        echo "Error: You need at least OSX 10.7 or higher to run this script."
+        exit 1
+    elif [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
+        # `terminal-notifier` uses Notfication Center which is an OS X 10.8+ feature.
         echo "Error: You need at least OSX 10.8 or higher to run this script without the --growl option."
         exit 1
     fi
@@ -200,7 +205,7 @@ do
                                 ;;
         -t | --test )           checkOS
                                 checkSoftware
-                                terminal-notifier -message "All test passed succesfully!"
+                                terminal-notifier -message "Successfully passed all tests!"
                                 exit
                                 ;;
     esac

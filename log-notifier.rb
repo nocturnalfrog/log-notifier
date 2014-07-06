@@ -11,6 +11,7 @@ class LogNotifier < Formula
   end
 
   # Adding dependencies
+  depends_on :macos => :lion # Needs at least Mac OS X "Lion" aka. 10.7.
   depends_on "terminal-notifier"
   depends_on "fswatch"
 
