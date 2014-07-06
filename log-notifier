@@ -51,21 +51,16 @@ function checkOS
 
 function checkSoftware
 {
-    # https://github.com/alloy/terminal-notifier
-    if  ! which -s terminal-notifier && [ ${use_growl} -eq 0 ]; then
-        echo "Attempting to install 'terminal-notifier'..."
-        # Lets try to install terminal-notifier
-        sudo gem install terminal-notifier
+    if  ! which -s fswatch; then
+        echo "Error: 'fswatch' is required but could not be found!"
+        echo "For manual installation see: https://github.com/alandipert/fswatch"
+        exit 1
+    fi
 
-        # Check to see if installation succeeded
-        if  ! which -s terminal-notifier; then
-            echo "Error: Could not install 'terminal-notifier'!"
-            echo "For manual installation see: https://github.com/alloy/terminal-notifier"
-            exit 1
-        else
-            printf "Installation succesfull! \n--\n"
-            terminal-notifier -message "Successfully installed 'terminal-notifier'!"
-        fi
+    if  ! which -s terminal-notifier && [ ${use_growl} -eq 0 ]; then
+        echo "Error: 'terminal-notifier' is required but could not be found!"
+        echo "For manual installation see: https://github.com/alloy/terminal-notifier"
+        exit 1
     fi
 
     if  ! which -s growlnotify && [ ${use_growl} -eq 1 ]; then
@@ -83,19 +78,6 @@ function checkSoftware
         exit 1
     fi
 
-    # https://github.com/alandipert/fswatch
-    if  ! which -s fswatch; then
-        # TODO check if brew is installed first, if not:
-        # ruby -e "$(curl -fsSL https://raw.github.com/Homebrew/homebrew/go/install)"
-        echo "Attempting to install 'fswatch'..."
-        brew install fswatch
-        if  ! which -s fswatch; then
-            echo "Error: Could not install 'fswatch'!"
-            exit 1
-        else
-            printf "Installation succesfull! \n--\n"
-        fi
-    fi
 }
 
 function recievedFSEvent

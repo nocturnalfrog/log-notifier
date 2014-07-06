@@ -9,4 +9,8 @@ class LogNotifier < Formula
   def install
     bin.install 'log-notifier'
   end
+
+  # Adding dependencies
+  depends_on "terminal-notifier"
+  depends_on "fswatch"
 end
