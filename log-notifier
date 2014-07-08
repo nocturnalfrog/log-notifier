@@ -29,7 +29,16 @@ file_pattern="*.log"
 ##### Functions
 function usage
 {
-    echo "Usage: ${APP_NAME} [-g][-h] [-p file_pattern] folder(s)"
+    cat << EOF
+${SEPERATOR}
+Usage: ${APP_NAME} [-h] [-g] [-p file_pattern] path_to_folder(s)
+
+Options:
+    -h, --help            Show this message.
+    -g, --growl           Use Growl instead of Notification Center for notifications.
+    -p, --file-pattern    Use a specific file pattern to monitor. (defaults to '*.log')
+${SEPERATOR}
+EOF
 }
 
 function cleanUp
