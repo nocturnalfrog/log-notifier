@@ -3,7 +3,7 @@ Log Notifier
 Watches for new data in your log files and displays this data either via `Notification Center` or `Growl`.
 
 Your log files don't need to exist when you start `log-notifier`, it will automatically detect
-and monitor new files provided the match the `--file-pattern` option.
+and monitor new files provided they match the `--file-pattern` option.
 
 Installation
 ------------
@@ -13,14 +13,14 @@ You can install log-notifier from [Homebrew](http://mxcl.github.com/homebrew/) u
 
 Dependencies
 ------------
-(Don't worry about the required dependencies, [Homebrew](http://mxcl.github.com/homebrew/) installs these for you.)
+(Don't worry about the required dependencies, [Homebrew](http://mxcl.github.com/homebrew/) will install them for you.)
 ###Required:
 
 * [fswatch](https://github.com/alandipert/fswatch) is used for detecting new files.
-* [terminal-notifier](https://github.com/alloy/terminal-notifier) is needed to display notifications in `Notification Center`.
+* [terminal-notifier](https://github.com/alloy/terminal-notifier) is required to display notifications in `Notification Center`.
 
 ###Optional:
-* `growlnotify` is required if you want the notifications to be displayed by `Growl` (see the `--growl` under options).
+* `growlnotify` is required if you want the option for the notifications to be displayed by `Growl` (see the `--growl` under options).
 You must install Growl on your own. You can learn more about Growl and see installation instructions at [growl.info](http://growl.info).
 
 
@@ -35,15 +35,16 @@ Usage
 
 Example Usage
 -------------
-Receive notifications via `Notification Center` when new entries are added to `*.log` files in the `/path/to/log/folder/` folder:
+Receive notifications via `Notification Center` when new lines are added to any files corresponding to the `*.log`
+pattern in the specified folder:
 
     $ log-notifier /path/to/log/folder/
 
-Receive notifications via `Growl` when new entries are added to the `error.log` in the `/path/to/log/folder/` folder:
+Receive notifications via `Growl` when new lines are added to the `error.log` in the `/path/to/log/folder/` folder:
 
     $ log-notifier --growl --file-pattern "error.log" /path/to/log/folder/
 
-Receive notifications via `Growl` when new entries are added to  `*.log` files in any `/path/to/vhosts/*/log/` folder:
+Receive notifications via `Growl` when new lines are added to  `*.log` files in any `/path/to/vhosts/*/log/` folder:
 
     $ log-notifier --growl  /path/to/vhosts/*/log/
 
