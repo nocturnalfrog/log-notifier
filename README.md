@@ -47,6 +47,11 @@ Receive notifications via `Growl` when new entries are added to  `*.log` files i
 
     $ log-notifier --growl  /path/to/vhosts/*/log/
 
-Don't like Homebrew?
---------------------
-TODO
+Don't like Homebrew? That's okay.
+---------------------------------
+Included in the repo is a makefile that allows you to install/uninstall without Homebrew.
+(Please note that you will have to install the required dependencies manually.)
+
+    $ make install
+    $ make uninstall
+
