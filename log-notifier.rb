@@ -3,8 +3,8 @@ require "formula"
 class LogNotifier < Formula
   homepage "https://github.com/nocturnalfrog/log-notifier"
   head "https://github.com/nocturnalfrog/log-notifier.git"
-  url "https://github.com/nocturnalfrog/log-notifier/archive/v0.3.tar.gz"
-  sha1 "5d508a51c52cb0fa44cd90901cb71f8d56109b2e"
+  url "https://github.com/nocturnalfrog/log-notifier/archive/v0.3.1.tar.gz"
+  sha1 "e2567257a6bfb492ce860235ea022863c83a3c74"
 
   def install
     bin.install "log-notifier"
