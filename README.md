@@ -9,6 +9,7 @@ Installation
 ------------
 You can install log-notifier from [Homebrew](http://mxcl.github.com/homebrew/) using:
 
+    $ brew tap nocturnalfrog/tap
     $ brew install log-notifier
 
 Dependencies
