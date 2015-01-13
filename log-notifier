@@ -51,18 +51,54 @@ function cleanUp
 function checkOS
 {
     # shellcheck disable=SC2072
-    # (The bash extended test command can compare dotted version numbers.)
-    if [[ ${OSX_VERSION} < 10.7 ]]; then
+    vercomp ${OSX_VERSION} 10.7
+    compare_result_10_7=$?
+    vercomp ${OSX_VERSION} 10.8
+    compare_result_10_8=$?
+
+    if [ ${compare_result_10_7} -eq 2 ]; then
         # GrowlNotify requires at least 10.7 to run.
         echo "Error: You need at least OSX 10.7 or higher to run this script."
         exit 1
-    elif [[ ${OSX_VERSION} < 10.8 ]] && [ ${use_growl} -eq 0 ]; then
+    elif [ ${compare_result_10_8} -eq 2 ] && [ ${use_growl} -eq 0 ]; then
         # `terminal-notifier` uses Notfication Center which is an OS X 10.8+ feature.
         echo "Error: You need at least OSX 10.8 or higher to run this script without the --growl option."
         exit 1
     fi
 
     echo "Passed OS version check."
+}
+
+# http://stackoverflow.com/questions/4023830/bash-how-compare-two-strings-in-version-format
+function vercomp () {
+    if [[ $1 == $2 ]]
+    then
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            return 2
+        fi
+    done
+    return 0
 }
 
 function checkSoftware
