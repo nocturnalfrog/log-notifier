@@ -4,7 +4,7 @@ class LogNotifier < Formula
   homepage "https://github.com/nocturnalfrog/log-notifier"
   head "https://github.com/nocturnalfrog/log-notifier.git"
   url "https://github.com/nocturnalfrog/log-notifier/archive/v0.4.tar.gz"
-  sha1 "6f8403d56f82250d2d920712e9efb074b852e9d0"
+  sha256 "6f8403d56f82250d2d920712e9efb074b852e9d0"
 
   def install
     bin.install "log-notifier"
